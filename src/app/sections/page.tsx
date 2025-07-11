@@ -3,14 +3,19 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import AnimatedOverlay from "@/components/ui/AnimatedOverlay";
 import MobileAppBar from "@/components/ui/MobileAppBar";
-import { getSectionFromBlob } from "@/lib/blob";
+import { getSectionFromBlob, saveSectionToBlob } from "@/lib/blob";
 
-const SECTION_BLOBS = [
-  { url: "https://your-vercel-blob-url/bolum1.json", key: "bolum1" },
-  { url: "https://your-vercel-blob-url/bolum2.json", key: "bolum2" },
-  { url: "https://your-vercel-blob-url/bolum3.json", key: "bolum3" },
-  { url: "https://your-vercel-blob-url/bolumras.json", key: "bolumras" },
-];
+const SECTION_NAMES = ["bolum1", "bolum2", "bolum3", "bolumras"];
+const SECTION_DEFAULTS: Record<string, Record<string, unknown>> = {
+  bolum1: { bolum: "Bölüm 1", aciklama: "Otomatik oluşturuldu.", veriler: [] },
+  bolum2: { bolum: "Bölüm 2", aciklama: "Otomatik oluşturuldu.", veriler: [] },
+  bolum3: { bolum: "Bölüm 3", aciklama: "Otomatik oluşturuldu.", veriler: [] },
+  bolumras: {
+    bolum: "Rastgele",
+    aciklama: "Otomatik oluşturuldu.",
+    veriler: [],
+  },
+};
 
 export default function SectionsPage() {
   const [sections, setSections] = useState<Record<string, unknown>[]>([]);
@@ -23,17 +28,22 @@ export default function SectionsPage() {
 
   // Bölüm başlıklarını blob'dan çek
   useEffect(() => {
-    Promise.all(SECTION_BLOBS.map((s) => getSectionFromBlob(s.url))).then(
-      (data) => {
-        setSections(
-          data.filter(
-            (d): d is Record<string, unknown> =>
-              d !== null && typeof d === "object"
-          )
-        );
-        setLoading(false);
+    (async () => {
+      const data: Record<string, unknown>[] = [];
+      for (const name of SECTION_NAMES) {
+        let section = null;
+        try {
+          section = await getSectionFromBlob(name);
+        } catch (e) {
+          // fetch hatası veya 404: blob'a örnek bölüm yaz ve tekrar dene
+          await saveSectionToBlob(name, SECTION_DEFAULTS[name]);
+          section = await getSectionFromBlob(name);
+        }
+        if (section && typeof section === "object") data.push(section);
       }
-    );
+      setSections(data);
+      setLoading(false);
+    })();
   }, []);
 
   const goNext = () => {

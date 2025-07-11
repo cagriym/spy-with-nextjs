@@ -5,8 +5,6 @@ import AnimatedOverlay from "@/components/ui/AnimatedOverlay";
 import MobileAppBar from "@/components/ui/MobileAppBar";
 import { saveUsernamesToBlob, getUsernamesFromBlob } from "@/lib/blob";
 
-const BLOB_URL = "https://your-vercel-blob-url/usernames.json"; // Proje sonunda gerçek URL ile değiştirilecek
-
 export default function UsernamesPage() {
   const [usernames, setUsernames] = useState<string[]>([]);
   const [input, setInput] = useState("");
@@ -18,10 +16,18 @@ export default function UsernamesPage() {
 
   // Sayfa açıldığında blob'dan kullanıcı adlarını çek
   useEffect(() => {
-    getUsernamesFromBlob(BLOB_URL).then((names) => {
+    (async () => {
+      let names: string[] = [];
+      try {
+        names = await getUsernamesFromBlob();
+      } catch (e) {
+        // fetch hatası veya 404: blob'a boş dizi yaz ve tekrar dene
+        await saveUsernamesToBlob([]);
+        names = await getUsernamesFromBlob();
+      }
       setUsernames(Array.isArray(names) ? names : []);
       setLoading(false);
-    });
+    })();
   }, []);
 
   const addUsername = async () => {
