@@ -34,7 +34,7 @@ export default function SectionsPage() {
         let section = null;
         try {
           section = await getSectionFromBlob(name);
-        } catch (e) {
+        } catch {
           // fetch hatası veya 404: blob'a örnek bölüm yaz ve tekrar dene
           await saveSectionToBlob(name, SECTION_DEFAULTS[name]);
           section = await getSectionFromBlob(name);

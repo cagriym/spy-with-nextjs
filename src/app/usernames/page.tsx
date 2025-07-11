@@ -20,7 +20,7 @@ export default function UsernamesPage() {
       let names: string[] = [];
       try {
         names = await getUsernamesFromBlob();
-      } catch (e) {
+      } catch {
         // fetch hatası veya 404: blob'a boş dizi yaz ve tekrar dene
         await saveUsernamesToBlob([]);
         names = await getUsernamesFromBlob();
