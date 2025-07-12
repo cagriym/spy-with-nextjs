@@ -52,21 +52,29 @@ export default function GameSetupPage() {
       role: "civilian",
     }));
     const playerCount = players.length;
-    // 2 kişilik özel mod
+    // 2 kişilik özel mod (güncellenmiş algoritma)
     if (playerCount === 2) {
-      // %50 spy, %50 hiç spy yok
-      const hasSpy = Math.random() < 0.5;
+      // %33: A spy, %33: B spy, %34: ikisi de normal
+      const rand = Math.random();
       let spyIdx = -1;
-      if (hasSpy) {
-        spyIdx = Math.floor(Math.random() * 2);
-        players[spyIdx].role = "spy";
+      if (rand < 0.33) {
+        spyIdx = 0; // A spy
+        players[0].role = "spy";
+        players[1].role = "civilian";
+      } else if (rand < 0.66) {
+        spyIdx = 1; // B spy
+        players[0].role = "civilian";
+        players[1].role = "spy";
+      } else {
+        spyIdx = -1; // ikisi de normal
+        players[0].role = "civilian";
+        players[1].role = "civilian";
       }
       setPlayers(players);
       setSelectedPlace(newWord);
-      setSpyId(spyIdx); // -1 if no spy
+      setSpyId(spyIdx); // -1: ikisi de normal, 0: A spy, 1: B spy
       setMode("two");
       setCurrentRevealIndex(0);
-      // Ayrıca spy olup olmadığını ve spy'ın kim olduğunu context'e kaydettik
       setTimeout(() => {
         router.push("/game/role-reveal");
       }, 800);

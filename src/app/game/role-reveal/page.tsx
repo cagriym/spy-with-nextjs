@@ -5,8 +5,13 @@ import { useGameContext } from "../GameContext";
 
 export default function RoleRevealPage() {
   const router = useRouter();
-  const { players, selectedPlace, currentRevealIndex, setCurrentRevealIndex } =
-    useGameContext();
+  const {
+    players,
+    selectedPlace,
+    currentRevealIndex,
+    setCurrentRevealIndex,
+    spyId,
+  } = useGameContext();
   const [showRole, setShowRole] = useState(false);
   const [warning, setWarning] = useState("");
 
@@ -29,10 +34,9 @@ export default function RoleRevealPage() {
   const isLast = currentRevealIndex === players.length - 1;
   // 2 kişilik özel mod için context'ten spyId alınır
   const isTwoPlayer = players.length === 2;
-  const spyId = players.findIndex((p) => p.role === "spy");
+  // Güncellenmiş algoritma: spyId -1 ise ikisi de normal, 0 veya 1 ise o oyuncu spy
   const noSpy = isTwoPlayer && spyId === -1;
-  const isSpy = isTwoPlayer && player.role === "spy";
-  const isCivilian = isTwoPlayer && player.role === "civilian";
+  const isSpy = isTwoPlayer && spyId === currentRevealIndex;
 
   const handleNext = () => {
     if (!showRole) {
