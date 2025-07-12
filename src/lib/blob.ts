@@ -2,20 +2,19 @@ import { put } from "@vercel/blob";
 
 const BLOB_BASE_URL = "https://ynvobcb9ww2grixg.public.blob.vercel-storage.com";
 
-// Kullanıcı adlarını blob'a kaydet
+// Kullanıcı adlarını blob'a kaydet (artık API route üzerinden)
 export async function saveUsernamesToBlob(usernames: string[]) {
-  const blob = new Blob([JSON.stringify(usernames)], {
-    type: "application/json",
+  const res = await fetch("/api/usernames", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(usernames),
   });
-  // 'usernames.json' dosyasını blob'a yükle (public erişim)
-  const { url } = await put(`usernames.json`, blob, {
-    access: "public",
-    token: undefined,
-  });
-  return url;
+  if (!res.ok) throw new Error("Failed to save usernames");
+  const data = await res.json();
+  return data.url;
 }
 
-// Kullanıcı adlarını blob'dan oku
+// Kullanıcı adlarını blob'dan oku (public, client-side için güvenli)
 export async function getUsernamesFromBlob(): Promise<string[]> {
   const res = await fetch(`${BLOB_BASE_URL}/usernames.json`);
   if (!res.ok) return [];
