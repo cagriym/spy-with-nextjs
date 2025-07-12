@@ -27,6 +27,12 @@ export default function RoleRevealPage() {
     );
   const player = players[currentRevealIndex];
   const isLast = currentRevealIndex === players.length - 1;
+  // 2 kişilik özel mod için context'ten spyId alınır
+  const isTwoPlayer = players.length === 2;
+  const spyId = players.findIndex((p) => p.role === "spy");
+  const noSpy = isTwoPlayer && spyId === -1;
+  const isSpy = isTwoPlayer && player.role === "spy";
+  const isCivilian = isTwoPlayer && player.role === "civilian";
 
   const handleNext = () => {
     if (!showRole) {
@@ -61,7 +67,18 @@ export default function RoleRevealPage() {
         ) : (
           <>
             <div className="text-2xl font-bold mb-6">Rolün:</div>
-            {player.role === "spy" ? (
+            {/* 2 kişilik modda spy yoksa ikisi de kelimeyi görür */}
+            {noSpy ? (
+              <>
+                <div className="text-3xl font-bold mb-4 text-green-400">
+                  Sivil
+                </div>
+                <div className="text-lg font-semibold mb-2">Mekan:</div>
+                <div className="text-xl font-bold mb-6 text-blue-300">
+                  {selectedPlace}
+                </div>
+              </>
+            ) : isSpy ? (
               <div className="text-3xl font-bold mb-4 text-red-400">SPY</div>
             ) : (
               <>

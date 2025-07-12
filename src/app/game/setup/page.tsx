@@ -52,12 +52,33 @@ export default function GameSetupPage() {
       role: "civilian",
     }));
     const playerCount = players.length;
+    // 2 kişilik özel mod
+    if (playerCount === 2) {
+      // %50 spy, %50 hiç spy yok
+      const hasSpy = Math.random() < 0.5;
+      let spyIdx = -1;
+      if (hasSpy) {
+        spyIdx = Math.floor(Math.random() * 2);
+        players[spyIdx].role = "spy";
+      }
+      setPlayers(players);
+      setSelectedPlace(newWord);
+      setSpyId(spyIdx); // -1 if no spy
+      setMode("two");
+      setCurrentRevealIndex(0);
+      // Ayrıca spy olup olmadığını ve spy'ın kim olduğunu context'e kaydettik
+      setTimeout(() => {
+        router.push("/game/role-reveal");
+      }, 800);
+      return;
+    }
+    // Çoklu mod (3+)
     const spyIdx = Math.floor(Math.random() * playerCount);
     players[spyIdx].role = "spy";
     setPlayers(players);
     setSelectedPlace(newWord);
     setSpyId(players[spyIdx].id);
-    setMode(playerCount === 2 ? "two" : "multi");
+    setMode("multi");
     setCurrentRevealIndex(0);
     setTimeout(() => {
       router.push("/game/role-reveal");
