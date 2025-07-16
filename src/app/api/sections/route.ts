@@ -9,7 +9,7 @@ export async function POST(req: NextRequest) {
     }
     const url = await saveSectionToBlob(sectionName, data);
     return NextResponse.json({ url });
-  } catch (e) {
+  } catch {
     return NextResponse.json({ error: "Bölüm kaydedilemedi" }, { status: 500 });
   }
 }

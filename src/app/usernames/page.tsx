@@ -10,7 +10,6 @@ export default function UsernamesPage() {
   const [overlayOpen, setOverlayOpen] = useState(true);
   const [animDirection, setAnimDirection] = useState<"left" | "right">("left");
   const [warning, setWarning] = useState("");
-  const [loading, setLoading] = useState(false);
   const [recentPlayers, setRecentPlayers] = useState<string[]>([]);
   const router = useRouter();
 
@@ -20,7 +19,6 @@ export default function UsernamesPage() {
       localStorage.getItem("spy-recent-players") || "[]"
     );
     setRecentPlayers(Array.isArray(recent) ? recent.slice(-3).reverse() : []);
-    setLoading(false);
   }, []);
 
   // Yeni kullanıcı ekle (sadece seçiliye ve son oynayanlara ekle)

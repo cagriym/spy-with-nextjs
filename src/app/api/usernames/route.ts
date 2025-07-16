@@ -25,9 +25,9 @@ export async function POST(req: NextRequest) {
       allowOverwrite: true,
     });
     return NextResponse.json({ url });
-  } catch (e: any) {
+  } catch {
     return NextResponse.json(
-      { error: e?.message || "Unknown error" },
+      { error: "Kullanıcılar kaydedilemedi" },
       { status: 500 }
     );
   }
