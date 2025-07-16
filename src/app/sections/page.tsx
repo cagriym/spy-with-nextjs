@@ -3,19 +3,55 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import AnimatedOverlay from "@/components/ui/AnimatedOverlay";
 import MobileAppBar from "@/components/ui/MobileAppBar";
-import { getSectionFromBlob, saveSectionToBlob } from "@/lib/blob";
+import { getSectionFromBlob } from "@/lib/blob";
 
 const SECTION_NAMES = ["bolum1", "bolum2", "bolum3", "bolumras"];
 const SECTION_DEFAULTS: Record<string, Record<string, unknown>> = {
-  bolum1: { bolum: "Bölüm 1", aciklama: "Otomatik oluşturuldu.", veriler: [] },
-  bolum2: { bolum: "Bölüm 2", aciklama: "Otomatik oluşturuldu.", veriler: [] },
-  bolum3: { bolum: "Bölüm 3", aciklama: "Otomatik oluşturuldu.", veriler: [] },
+  bolum1: {
+    bolum: "Bölüm 1",
+    aciklama: "Otomatik oluşturuldu.",
+    veriler: ["Kütüphane", "Plaj", "Restoran"],
+  },
+  bolum2: {
+    bolum: "Bölüm 2",
+    aciklama: "Otomatik oluşturuldu.",
+    veriler: ["Hastane", "Okul", "Park"],
+  },
+  bolum3: {
+    bolum: "Bölüm 3",
+    aciklama: "Otomatik oluşturuldu.",
+    veriler: ["Müze", "Otobüs", "Sinema"],
+  },
   bolumras: {
     bolum: "Rastgele",
     aciklama: "Otomatik oluşturuldu.",
-    veriler: [],
+    veriler: [
+      "Kütüphane",
+      "Plaj",
+      "Restoran",
+      "Hastane",
+      "Okul",
+      "Park",
+      "Müze",
+      "Otobüs",
+      "Sinema",
+    ],
   },
 };
+
+// API üzerinden bölüm kaydetme fonksiyonu
+async function saveSectionViaApi(
+  sectionName: string,
+  data: Record<string, unknown>
+) {
+  const res = await fetch("/api/sections", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ sectionName, data }),
+  });
+  if (!res.ok) throw new Error("Bölüm kaydedilemedi");
+  return await res.json();
+}
 
 export default function SectionsPage() {
   const [sections, setSections] = useState<Record<string, unknown>[]>([]);
@@ -35,8 +71,8 @@ export default function SectionsPage() {
         try {
           section = await getSectionFromBlob(name);
         } catch {
-          // fetch hatası veya 404: blob'a örnek bölüm yaz ve tekrar dene
-          await saveSectionToBlob(name, SECTION_DEFAULTS[name]);
+          // fetch hatası veya 404: API üzerinden blob'a örnek bölüm yaz ve tekrar dene
+          await saveSectionViaApi(name, SECTION_DEFAULTS[name]);
           section = await getSectionFromBlob(name);
         }
         if (section && typeof section === "object") data.push(section);

@@ -3,71 +3,69 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import AnimatedOverlay from "@/components/ui/AnimatedOverlay";
 import MobileAppBar from "@/components/ui/MobileAppBar";
-import { saveUsernamesToBlob, getUsernamesFromBlob } from "@/lib/blob";
 
 export default function UsernamesPage() {
-  const [usernames, setUsernames] = useState<string[]>([]);
+  const [selectedUsers, setSelectedUsers] = useState<string[]>([]); // oyuna katılacaklar
   const [input, setInput] = useState("");
   const [overlayOpen, setOverlayOpen] = useState(true);
   const [animDirection, setAnimDirection] = useState<"left" | "right">("left");
   const [warning, setWarning] = useState("");
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const [recentPlayers, setRecentPlayers] = useState<string[]>([]);
   const router = useRouter();
 
-  // Sayfa açıldığında blob'dan kullanıcı adlarını çek
+  // Son oynayanları localStorage'dan çek
   useEffect(() => {
-    (async () => {
-      let names: string[] = [];
-      try {
-        names = await getUsernamesFromBlob();
-      } catch {
-        // fetch hatası veya 404: blob'a boş dizi yaz ve tekrar dene
-        await saveUsernamesToBlob([]);
-        names = await getUsernamesFromBlob();
-      }
-      setUsernames(Array.isArray(names) ? names : []);
-      setLoading(false);
-    })();
+    const recent = JSON.parse(
+      localStorage.getItem("spy-recent-players") || "[]"
+    );
+    setRecentPlayers(Array.isArray(recent) ? recent.slice(-3).reverse() : []);
+    setLoading(false);
   }, []);
 
+  // Yeni kullanıcı ekle (sadece seçiliye ve son oynayanlara ekle)
   const addUsername = async () => {
-    if (!input.trim()) {
+    const name = input.trim();
+    if (!name) {
       setWarning("Lütfen bir isim giriniz.");
       return;
     }
-    if (usernames.includes(input.trim())) {
-      setWarning("Aynı isim tekrar eklenemez.");
+    if (selectedUsers.includes(name)) {
+      setWarning("Bu isim zaten seçili.");
+      setInput("");
       return;
     }
-    if (usernames.length >= 10) {
-      setWarning("En fazla 10 kullanıcı eklenebilir.");
+    if (selectedUsers.length >= 10) {
+      setWarning("En fazla 10 oyuncu seçebilirsiniz.");
       return;
     }
-    const newList = [...usernames, input.trim()];
-    setUsernames(newList);
+    setSelectedUsers([...selectedUsers, name]);
     setInput("");
     setWarning("");
-    await saveUsernamesToBlob(newList);
   };
 
-  const removeUsername = async (name: string) => {
-    const newList = usernames.filter((u) => u !== name);
-    setUsernames(newList);
-    await saveUsernamesToBlob(newList);
+  // Seçili kullanıcıyı çıkar
+  const removeSelectedUser = (name: string) => {
+    setSelectedUsers(selectedUsers.filter((u) => u !== name));
   };
 
   const goNext = async () => {
-    if (usernames.length < 2) {
-      setWarning("En az 2 kullanıcı ekleyiniz.");
+    if (selectedUsers.length < 2) {
+      setWarning("En az 2 oyuncu seçmelisiniz.");
       return;
     }
     localStorage.setItem(
       "spy-usernames",
-      JSON.stringify(usernames.map((name) => ({ name, feature: "" })))
+      JSON.stringify(selectedUsers.map((name) => ({ name, feature: "" })))
     );
-    await saveUsernamesToBlob(usernames);
+    // Son oynayanları güncelle
+    const updatedRecent = [...selectedUsers].slice(-3);
+    localStorage.setItem("spy-recent-players", JSON.stringify(updatedRecent));
     setAnimDirection("left");
     setOverlayOpen(false);
+    setTimeout(() => {
+      router.push("/sections");
+    }, 200);
   };
   const goBack = () => {
     setAnimDirection("right");
@@ -84,73 +82,93 @@ export default function UsernamesPage() {
       direction={animDirection}
       onExit={handleExit}
     >
-      <MobileAppBar
-        title="Kullanıcıları Gir"
-        onBack={goBack}
-        onNext={goNext}
-        nextLabel="İleri"
-      />
-      <div
-        className="flex flex-1 flex-col justify-center items-center w-full pt-16 px-4 pb-8 min-h-screen overflow-y-auto"
-        style={{
-          fontFamily: "var(--font-geist-sans)",
-          background: "#000",
-          color: "#fff",
-        }}
-      >
-        {loading ? (
-          <div className="text-white">Yükleniyor...</div>
-        ) : (
-          <>
-            {warning && (
-              <div className="mb-4 text-red-400 font-bold text-lg">
-                {warning}
-              </div>
-            )}
-            <div className="flex flex-row gap-2 w-full max-w-sm mb-4">
-              <input
-                type="text"
-                value={input}
-                maxLength={20}
-                onChange={(e) => setInput(e.target.value)}
-                className="flex-1 px-4 py-3 rounded border border-white bg-black text-white text-lg focus:outline-none"
-                placeholder="Kullanıcı adı girin"
-                disabled={usernames.length >= 10}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") addUsername();
-                }}
-              />
-              <button
-                className="px-4 py-3 rounded bg-white text-black font-bold text-lg shadow-lg hover:bg-gray-200"
-                onClick={addUsername}
-                disabled={usernames.length >= 10}
-              >
-                Ekle
-              </button>
+      <MobileAppBar title="Kullanıcılar" onBack={goBack} />
+      <div className="flex flex-col items-center justify-center min-h-screen bg-black text-white px-4 pb-32 sm:pb-4">
+        <div className="w-full max-w-md mx-auto mt-8">
+          {/* Son Oynayanlar */}
+          <div className="mb-4">
+            <div className="font-bold text-lg mb-1 text-yellow-300">
+              Son Oynayanlar
             </div>
-            <ul className="w-full max-w-sm mb-4">
-              {usernames.map((name, idx) => (
-                <li
-                  key={name}
-                  className="flex items-center justify-between px-4 py-2 border-b border-gray-700"
-                >
-                  <span>
-                    {idx + 1}. {name}
-                  </span>
-                  <button
-                    className="ml-2 px-2 py-1 rounded bg-red-600 text-white text-xs font-bold hover:bg-red-700"
-                    onClick={() => removeUsername(name)}
+            <div className="flex gap-2 flex-wrap">
+              {recentPlayers.length === 0 ? (
+                <span className="text-gray-400 text-sm">Henüz yok</span>
+              ) : (
+                recentPlayers.map((name, i) => (
+                  <span
+                    key={i}
+                    className="bg-gray-800 px-3 py-1 rounded-full text-sm font-semibold"
                   >
-                    Sil
-                  </button>
-                </li>
-              ))}
-            </ul>
-            <div className="text-gray-400 text-sm mb-2">
-              {usernames.length}/10 kullanıcı
+                    {name}
+                  </span>
+                ))
+              )}
             </div>
-          </>
-        )}
+          </div>
+          {/* Oyun Oyuncuları */}
+          <div className="mb-4">
+            <div className="font-bold text-lg mb-1 text-green-300">
+              Oyun Oyuncuları
+            </div>
+            <div className="flex gap-2 flex-wrap">
+              {selectedUsers.length === 0
+                ? null
+                : selectedUsers.map((name, i) => (
+                    <span
+                      key={i}
+                      className="bg-green-700 px-3 py-1 rounded-full text-sm font-semibold flex items-center gap-1"
+                    >
+                      {name}
+                      <button
+                        className="ml-1 text-xs text-red-300 hover:text-red-500"
+                        onClick={() => removeSelectedUser(name)}
+                        title="Çıkar"
+                        type="button"
+                      >
+                        ✕
+                      </button>
+                    </span>
+                  ))}
+            </div>
+          </div>
+          {/* Kullanıcı adı ekleme inputu */}
+          <input
+            type="text"
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            className="w-full px-4 py-2 rounded bg-gray-900 text-white border border-gray-700 mb-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            placeholder="Kullanıcı adı giriniz"
+            maxLength={20}
+          />
+          <button
+            onClick={addUsername}
+            className="w-full px-4 py-2 rounded bg-blue-500 text-white font-bold mb-2 hover:bg-blue-600 transition-colors duration-200"
+          >
+            Ekle
+          </button>
+          {warning && (
+            <div className="text-red-400 font-bold mb-2">{warning}</div>
+          )}
+        </div>
+        {/* Sabitlenmiş Oyuna Başla butonu */}
+        <button
+          onClick={goNext}
+          className={`fixed left-0 right-0 bottom-0 z-50 w-full max-w-md mx-auto px-4 py-4 rounded-t-2xl font-bold transition-colors duration-200 shadow-lg
+            ${
+              selectedUsers.length >= 2
+                ? "bg-green-500 text-white hover:bg-green-600"
+                : "bg-gray-700 text-gray-400 cursor-not-allowed"
+            }
+          `}
+          style={{
+            margin: "0 auto",
+            // iOS safe area desteği
+            paddingBottom: "env(safe-area-inset-bottom, 16px)",
+          }}
+          disabled={selectedUsers.length < 2}
+        >
+          Oyuna Başla
+        </button>
       </div>
     </AnimatedOverlay>
   );

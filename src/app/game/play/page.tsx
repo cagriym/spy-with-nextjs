@@ -11,6 +11,7 @@ import {
   AlertDialogAction,
   AlertDialogCancel,
 } from "@/components/ui/alert-dialog";
+import { saveUsernamesToBlob } from "@/lib/blob";
 
 export default function GamePlayPage() {
   const router = useRouter();
@@ -122,8 +123,9 @@ export default function GamePlayPage() {
   };
 
   // Modal: Yeni Oyun
-  const handleFullReset = () => {
+  const handleFullReset = async () => {
     setShowModal(false);
+    await saveUsernamesToBlob([]); // Kullanıcı listesini blob'dan sil
     resetGame();
     router.push("/");
   };
